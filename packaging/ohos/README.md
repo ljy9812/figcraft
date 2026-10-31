@@ -2,9 +2,14 @@
 
 Runs the official `figcraft-web` build — the same static site published as
 `figcraft-web-<version>.zip` on the GitHub release — inside a HarmonyOS app. An
-ArkTS shell wraps an ArkWeb `Web` component and serves the site from the
-HAP's own `rawfile`: no network origin, no server-side code, no Rust/wasm
-toolchain involved.
+ArkTS shell wraps an ArkWeb `Web` component and serves the site from
+the HAP's own `rawfile`: no network origin, no server-side code.
+
+This branch (`ohos-webshell`) is the integrated form: the ArkWeb shell
+packaging under `packaging/ohos/` plus the wasm-side CJK font change
+merged from the `cjk-web-face` branch (which remains the clean
+single-purpose form for an upstream PR). Build either variant from this
+one checkout.
 
 ## How the shell works
 
@@ -22,8 +27,27 @@ Prerequisites: DevEco Studio (for `hvigorw`, `ohpm`, and the HarmonyOS SDK),
 
 ```powershell
 cd packaging\ohos
-.\scripts\fetch-web.ps1     # deploy the web build into rawfile (latest release)
+.\scripts\fetch-web.ps1     # deploy the web build into rawfile
 .\scripts\build-hap.ps1     # build the Release HAP and install to the connected device
+```
+
+### CJK (Chinese) variant — in this branch
+
+no source change — the official code embeds its CJK faces when FIGCRAFT_EMBED_CJK=1 is set at build time (faces from the craft-fonts checkout); add that env var to the recipe below.
+
+Self-build recipe (Windows host, Rust stable, `trunk` 0.21.x; pin versions
+per the upstream repo — on networks where the wasm-opt download hangs,
+build with the optimizer off or assemble the .stage outputs by hand):
+
+```powershell
+git clone -b hans-wqy-microhei https://github.com/ljy9812/craft-fonts.git craft-fonts-cjk
+$env:CRAFT_FONTS_DIR = "<repo>\craft-fonts-cjk"      # absolute path
+cd apps\figcraft-web
+trunk build --release
+# deploy dist\web\ into packaging\ohos\entry\src\main\resources\rawfile\web\:
+# swap the wasm+glue pair, copy snippets\ and fonts\ when the build produced
+# them, and rewrite index.html's asset hash — a stale hash (or a stale SRI
+# integrity attribute) double-fetches the wasm behind a white window.
 ```
 
 ### Signing
@@ -38,6 +62,14 @@ to match your signing material.
 
 ## Verified status and known limitations
 
-Verified on a HarmonyOS laptop (HAD-W24, API 23): install & launch with an
-English-native UI (the wasm does not read the browser language). Deeper
-interaction criteria not yet run.
+Verified on a HarmonyOS laptop (HAD-W24, API 23, physical keyboard +
+touchscreen): install & launch and zh-Hans UI rendering with the
+self-built CJK wasm (FIGCRAFT_EMBED_CJK=1). Deeper interaction criteria
+in progress.
+
+Known limitations:
+
+- Canvas text layers render CJK as tofu although the UI face renders — the
+  same application-layer font-routing family as designcraft.
+- Code export from the Inspect panel is clipboard-only (by design, no file
+  write path).
