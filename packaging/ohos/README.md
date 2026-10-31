@@ -5,11 +5,7 @@ Runs the official `figcraft-web` build — the same static site published as
 ArkTS shell wraps an ArkWeb `Web` component and serves the site from
 the HAP's own `rawfile`: no network origin, no server-side code.
 
-This branch (`ohos-webshell`) is the integrated form: the ArkWeb shell
-packaging under `packaging/ohos/` plus the wasm-side CJK font change
-merged from the `cjk-web-face` branch (which remains the clean
-single-purpose form for an upstream PR). Build either variant from this
-one checkout.
+The CJK (Chinese) variant is a build-time env switch — `FIGCRAFT_EMBED_CJK=1` — over the official code; see the recipe below.
 
 ## How the shell works
 
